@@ -36,7 +36,7 @@ typedef struct {
 /* Task timing in ticks (16 ms per tick). */
 static LEDTask taskA = {PB0, 9, 47, "A"};
 static LEDTask taskB = {PB1, 19, 75, "B"};
-static LEDTask taskC = {PB2, 28, 94, "C"};
+static LEDTask taskC = {PB2, 88, 94, "C"};
 
 static SemaphoreHandle_t uartMutex;
 
