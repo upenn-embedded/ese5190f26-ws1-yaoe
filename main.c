@@ -28,17 +28,39 @@
 
 typedef struct {
 	uint8_t pin;
-	TickType_t onTime;
+	uint16_t onTimeMs;
 	TickType_t period;
 	const char *name;
 } LEDTask;
 
-/* Task timing in ticks (16 ms per tick). */
-static LEDTask taskA = {PB0, 9, 47, "A"};
-static LEDTask taskB = {PB1, 19, 75, "B"};
-static LEDTask taskC = {PB2, 28, 94, "C"};
+/* CPU time in milliseconds, period in RTOS ticks. */
+static LEDTask taskA = {PB0, 150, 47, "A"};
+static LEDTask taskB = {PB1, 300, 75, "B"};
+static LEDTask taskC = {PB2, 1400, 94, "C"};
 
 static SemaphoreHandle_t uartMutex;
+
+/*--------------------Timer Functions----------------------*/
+
+static void Timer1_init(void)
+{
+	/* Timer1 normal mode, prescaler 64. */
+	TCCR1A = 0;
+	TCCR1B = (1 << CS11) | (1 << CS10);
+	TCNT1 = 0;
+}
+
+static void busy_wait_ms(uint16_t durationMs)
+{
+	/* 250 timer counts = 1 ms at 16 MHz. */
+	for (uint16_t ms = 0; ms < durationMs; ms++) {
+		uint16_t start = TCNT1;
+
+		while ((uint16_t)(TCNT1 - start) < 250) {
+			/* Keep CPU busy until 1 ms passes. */
+		}
+	}
+}
 
 /*--------------------UART Functions-----------------------*/
 
@@ -65,19 +87,25 @@ static void UART_print(const char *message)
 static void LED_task(void *parameter)
 {
 	LEDTask *task = (LEDTask *)parameter;
-	TickType_t lastWake = xTaskGetTickCount();
+
+	/* All task periods are referenced to scheduler start. */
+	TickType_t lastWake = 0;
 
 	while (1) {
-		/* Turn LED on. */
+		/* Prevent other tasks from running. */
+		vTaskSuspendAll();
+
 		PORTB |= (1 << task->pin);
 
-		/* Allow other tasks to run while LED is on. */
-		vTaskDelay(task->onTime);
+		/* Occupy CPU for the full task duration. */
+		busy_wait_ms(task->onTimeMs);
 
-		/* Turn LED off. */
 		PORTB &= ~(1 << task->pin);
 
-		/* Check whether the task completed before its deadline. */
+		/* Allow other tasks to run again. */
+		xTaskResumeAll();
+
+		/* Check deadline against the scheduled release. */
 		TickType_t elapsed = xTaskGetTickCount() - lastWake;
 
 		xSemaphoreTake(uartMutex, portMAX_DELAY);
@@ -93,7 +121,7 @@ static void LED_task(void *parameter)
 
 		xSemaphoreGive(uartMutex);
 
-		/* Wait until the start of the next period. */
+		/* Maintain the periodic release schedule. */
 		vTaskDelayUntil(&lastWake, task->period);
 	}
 }
@@ -102,19 +130,20 @@ static void LED_task(void *parameter)
 
 int main(void)
 {
-	/* Configure PB0, PB1, and PB2 as outputs. */
+	/* Configure LED output pins. */
 	DDRB |= (1 << PB0) | (1 << PB1) | (1 << PB2);
 	PORTB &= ~((1 << PB0) | (1 << PB1) | (1 << PB2));
 
-	/* Initialize UART and mutex. */
+	Timer1_init();
 	UART_init();
+
 	uartMutex = xSemaphoreCreateMutex();
 
 	if (uartMutex == NULL) {
 		while (1);
 	}
 
-	/* Create tasks with Rate Monotonic priorities. */
+	/* Create tasks with RM priorities and stack depth 256. */
 	BaseType_t a = xTaskCreate(LED_task, "A", 256, &taskA, 3, NULL);
 	BaseType_t b = xTaskCreate(LED_task, "B", 256, &taskB, 2, NULL);
 	BaseType_t c = xTaskCreate(LED_task, "C", 256, &taskC, 1, NULL);
