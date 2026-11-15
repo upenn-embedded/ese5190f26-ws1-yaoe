@@ -32,3 +32,10 @@ Expected values calculated using equation D = (ON time in ticks)/(Period in tick
 Task A: 9/47 * 100 = 19.15%
 Task B: 19/75 * 100 = 25.33%
 Task C: 28/94 * 100 = 29.79%
+
+
+
+
+(I2) 
+![alt text](images/i2.jpg)
+The measured execution times were 149.9 ms for Task A, 300.0 ms for Task B, and 1400.0 ms for task C, matching the expected values. The LED signals didn't overlap because vTaskSuspendAll() prevented context switching during execution. The task set's utilization increases to 138.33, exceeding possible CPU capacity. As a result, deadlines will be missed (UART did report missed deadlines for all three tasks). 
