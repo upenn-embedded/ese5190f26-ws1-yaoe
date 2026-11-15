@@ -24,6 +24,7 @@ For task C, all 4 jobs complete before their respective 1500 ms deadlines.
 
 
 ![alt text](images/i1.jpg)
+This screenshot was captured with task C at 28 ticks. After, Task C was increased to 88 ticks for partb1.c.
 
 The measured duty cycles were 19.15 for Task A, 25.331 for Task B, and 29.786 for task C, closely matching the expected values of 19.15%, 25.33%, and 29.79% respectively. Minor discrepancies can be due to measurement precision and timing overhead. 
 
@@ -33,7 +34,7 @@ Task A: 9/47 * 100 = 19.15%
 Task B: 19/75 * 100 = 25.33%
 Task C: 28/94 * 100 = 29.79%
 
-
+Increasing task C's simulated execution time to 1400 ms raises the CPU utilization to 138.33%, making the task set unschedulabel if all execution times represent actual CPU use. However, the preemptive implementation uses vTaskDelay() while the LEDs remain on, allowing other tasks to execute. The UART output continued reporting all 3 tasks on time because the LED on duration doesn't represent actual CPU usage. 
 
 
 (I2) 
