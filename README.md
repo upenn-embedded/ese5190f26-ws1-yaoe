@@ -20,4 +20,15 @@ For task B, all 5 jobs complete before their respective 1200 ms deadline.
 For task C, all 4 jobs complete before their respective 1500 ms deadlines. 
 
 
+(I1)oscilloscope image
 
+
+![alt text](images/i1.jpg)
+
+The measured duty cycles were 19.15 for Task A, 25.331 for Task B, and 29.786 for task C, closely matching the expected values of 19.15%, 25.33%, and 29.79% respectively. Minor discrepancies can be due to measurement precision and timing overhead. 
+
+Expected values calculated using equation D = (ON time in ticks)/(Period in ticks) * 100%. 
+
+Task A: 9/47 * 100 = 19.15%
+Task B: 19/75 * 100 = 25.33%
+Task C: 28/94 * 100 = 29.79%
